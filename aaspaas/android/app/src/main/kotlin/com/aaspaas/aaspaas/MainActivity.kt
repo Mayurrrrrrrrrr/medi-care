@@ -1,5 +1,0 @@
-package com.aaspaas.aaspaas
-
-import io.flutter.embedding.android.FlutterActivity
-
-class MainActivity : FlutterActivity()

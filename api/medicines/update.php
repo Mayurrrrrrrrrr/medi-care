@@ -8,14 +8,12 @@ $user_id = authenticate();
 
 $data = json_decode(file_get_contents("php://input"));
 
-if (!isset($_GET['id'])) {
-    sendResponse(400, 'error', 'Medicine ID is required in URL parameter ?id=');
+if (!isset($data->medicine_id)) {
+    sendResponse(400, 'error', 'Medicine ID is required');
 }
+$medicine_id = $data->medicine_id;
 
-$medicine_id = $_GET['id'];
-
-// Check auth via patient
-$checkQuery = "SELECT p.id FROM medicines m
+$checkQuery = "SELECT m.id FROM medicines m
                JOIN patient_profiles p ON m.patient_id = p.id
                LEFT JOIN family_members f ON p.id = f.patient_id 
                WHERE m.id = :mid AND (p.created_by_user_id = :uid OR f.user_id = :uid)";
@@ -23,30 +21,24 @@ $checkStmt = $conn->prepare($checkQuery);
 $checkStmt->execute([':mid' => $medicine_id, ':uid' => $user_id]);
 
 if ($checkStmt->rowCount() == 0) {
-    sendResponse(403, 'error', 'Unauthorized to update this medicine');
+    sendResponse(403, 'error', 'Unauthorized');
 }
 
-$fields = [];
-$params = [':id' => $medicine_id];
+$query = "UPDATE medicines SET 
+    name = :name, form = :form, dose = :dose, food_timing = :food_timing, 
+    is_critical = :is_critical, stock_count = :stock_count, stock_alert_at = :stock_alert_at 
+    WHERE id = :id";
+$stmt = $conn->prepare($query);
+$stmt->execute([
+    ':name' => $data->name ?? null,
+    ':form' => $data->form ?? null,
+    ':dose' => $data->dose ?? null,
+    ':food_timing' => $data->food_timing ?? null,
+    ':is_critical' => $data->is_critical ?? 0,
+    ':stock_count' => $data->stock_count ?? 0,
+    ':stock_alert_at' => $data->stock_alert_at ?? 10,
+    ':id' => $medicine_id
+]);
 
-$updatable_fields = ['name', 'form', 'dose', 'color_shape', 'food_timing', 'is_critical', 'end_date', 'stock_count', 'stock_alert_at', 'pill_photo_url'];
-
-foreach ($updatable_fields as $field) {
-    if (isset($data->$field)) {
-        $fields[] = "$field = :$field";
-        $params[":$field"] = $data->$field;
-    }
-}
-
-if (count($fields) > 0) {
-    $query = "UPDATE medicines SET " . implode(", ", $fields) . " WHERE id = :id";
-    $stmt = $conn->prepare($query);
-    if ($stmt->execute($params)) {
-        sendResponse(200, 'success', 'Medicine updated successfully');
-    } else {
-        sendResponse(500, 'error', 'Failed to update medicine');
-    }
-} else {
-    sendResponse(400, 'error', 'No fields provided to update');
-}
+sendResponse(200, 'success', 'Medicine updated successfully', $data);
 ?>

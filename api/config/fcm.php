@@ -1,5 +1,5 @@
 <?php
-// Aaspaas - Firebase Push Notification Configuration (Modern HTTP v1 API)
+// Nishchint - Firebase Push Notification Configuration (Modern HTTP v1 API)
 
 // Generate an OAuth 2.0 token securely from the JSON file using Core PHP (No Composer needed!)
 function getFCMv1Token() {

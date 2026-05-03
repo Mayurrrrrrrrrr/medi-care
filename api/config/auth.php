@@ -1,6 +1,6 @@
 <?php
-// Aaspaas - Simple stateless JWT authentication configuration
-define('JWT_SECRET', 'Aaspaas_Super_Secret_Key_2026!');
+// Nishchint - Simple stateless JWT authentication configuration
+define('JWT_SECRET', 'Nishchint_Super_Secret_Key_2026!');
 
 // Generate a token valid for 30 days
 function generateJWT($user_id) {

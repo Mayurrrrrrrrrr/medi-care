@@ -61,6 +61,7 @@ CREATE TABLE `medicines` (
   `pill_photo_url` VARCHAR(255) DEFAULT NULL,
   `added_by_user_id` BIGINT UNSIGNED NOT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `deleted_at` TIMESTAMP NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   FOREIGN KEY (`patient_id`) REFERENCES `patient_profiles`(`id`) ON DELETE CASCADE,
   FOREIGN KEY (`added_by_user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
@@ -132,3 +133,17 @@ CREATE TABLE `care_notes` (
   FOREIGN KEY (`medicine_id`) REFERENCES `medicines`(`id`) ON DELETE CASCADE,
   FOREIGN KEY (`added_by_user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 10. family_notifications
+CREATE TABLE family_notifications (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  patient_id BIGINT UNSIGNED NOT NULL,
+  triggered_by_user_id BIGINT UNSIGNED NOT NULL,
+  schedule_id BIGINT UNSIGNED NOT NULL,
+  message TEXT NOT NULL,
+  is_read TINYINT(1) DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (patient_id) REFERENCES patient_profiles(id) ON DELETE CASCADE,
+  FOREIGN KEY (triggered_by_user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (schedule_id) REFERENCES medicine_schedules(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

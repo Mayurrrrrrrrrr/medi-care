@@ -1,6 +1,6 @@
 <?php
 // Handle local file uploads (voice notes, pill photos)
-function handleUpload($file, $target_dir, $allowed_types) {
+function handleUpload($file, $target_dir, $allowed_types, $custom_filename = null) {
     if (!isset($file) || !is_array($file) || $file['error'] != UPLOAD_ERR_OK) {
         $errCode = is_array($file) ? ($file['error'] ?? 'Unknown') : 'Missing File Stream';
         return ['success' => false, 'message' => 'Upload error or no file provided. Code: ' . $errCode];
@@ -20,8 +20,8 @@ function handleUpload($file, $target_dir, $allowed_types) {
     }
     
     // Generate unique file name
-    $new_filename = uniqid('aaspaas_', true) . '.' . $file_ext;
-    $target_file = $target_dir . $new_filename;
+    $new_filename = $custom_filename ? $custom_filename : (uniqid('nishchint_', true) . '.' . $file_ext);
+    $target_file = rtrim($target_dir, '/') . '/' . $new_filename;
     
     if (move_uploaded_file($file['tmp_name'], $target_file)) {
         return ['success' => true, 'filename' => $new_filename, 'path' => $target_file];
