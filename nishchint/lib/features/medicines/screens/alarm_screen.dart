@@ -79,7 +79,12 @@ class _AlarmScreenState extends State<AlarmScreen> with TickerProviderStateMixin
         await _audioPlayer.play(DeviceFileSource(localPath), volume: 1.0);
       } else {
         // Use system notification sound as fallback
-        FlutterRingtonePlayer.playNotification();
+        FlutterRingtonePlayer.play(
+          android: AndroidSounds.notification,
+          ios: IosSounds.glass,
+          looping: false,
+          volume: 1.0,
+        );
       }
     } catch (e) {
       debugPrint("Error playing alarm audio: $e");

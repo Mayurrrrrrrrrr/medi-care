@@ -1,0 +1,3 @@
+ALTER TABLE family_notifications 
+ADD COLUMN schedule_id BIGINT UNSIGNED NOT NULL,
+ADD COLUMN message TEXT NOT NULL;

@@ -15,6 +15,7 @@ import '../settings/settings_screen.dart';
 import 'widgets/weekly_chart_widget.dart';
 import '../../core/utils/language_helper.dart';
 import '../../core/constants/strings.dart';
+import '../../shared/providers/settings_provider.dart';
 
 
 class HomeScreen extends StatefulWidget {
@@ -30,8 +31,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String getGreeting() {
     final hour = DateTime.now().hour;
-    // Check if current locale is Hindi (using our helper)
-    final bool isHi = LanguageProvider.isHindi(context);
+    // Check if current locale is Hindi
+    final bool isHi = SettingsProvider.instance.language == 'hi';
     
     if (hour < 12) return isHi ? 'सुप्रभात' : 'Good Morning';
     if (hour < 17) return isHi ? 'नमस्ते' : 'Good Afternoon';
