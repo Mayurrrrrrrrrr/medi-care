@@ -7,8 +7,9 @@ import '../home/home_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   final String phoneNumber;
+  final String? firebaseToken;
 
-  const RegisterScreen({super.key, required this.phoneNumber});
+  const RegisterScreen({super.key, required this.phoneNumber, this.firebaseToken});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -34,7 +35,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final response = await apiService.post(ApiConstants.register, {
         'name': name,
         'phone': widget.phoneNumber,
-        // 'fcm_token': 'test_token' // Later grab actual FCM token
+        'firebase_token': widget.firebaseToken,
       });
 
       if (response['status'] == 'success') {

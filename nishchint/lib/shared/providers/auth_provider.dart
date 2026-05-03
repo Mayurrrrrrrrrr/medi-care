@@ -34,14 +34,15 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> verifyOtp(String phone) async {
+  Future<bool> verifyOtp(String phone, String? firebaseToken) async {
     _isLoading = true;
     notifyListeners();
 
     try {
       final response = await _apiService.post(ApiConstants.verifyOtp, {
         'phone': phone,
-        'fcm_token': null // Can fetch real FCM token here before sending
+        'firebase_token': firebaseToken,
+        'fcm_token': await FirebaseMessaging.instance.getToken()
       });
 
       if (response['status'] == 'success') {

@@ -8,6 +8,7 @@ import '../widgets/voice_recorder_widget.dart';
 import '../../../services/voice_cache_service.dart';
 import '../../../core/utils/language_helper.dart';
 import '../../../core/constants/strings.dart';
+import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
 
 class AlarmScreen extends StatefulWidget {
   final int scheduleId;
@@ -55,6 +56,7 @@ class _AlarmScreenState extends State<AlarmScreen> with TickerProviderStateMixin
   @override
   void initState() {
     super.initState();
+    _audioPlayer = AudioPlayer();
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 1),
@@ -76,8 +78,8 @@ class _AlarmScreenState extends State<AlarmScreen> with TickerProviderStateMixin
       if (localPath != null && localPath != 'none') {
         await _audioPlayer.play(DeviceFileSource(localPath), volume: 1.0);
       } else {
-        // Play gentle chime
-        await _audioPlayer.play(AssetSource('sounds/gentle_chime.mp3'), volume: 0.8);
+        // Use system notification sound as fallback
+        FlutterRingtonePlayer.playNotification();
       }
     } catch (e) {
       debugPrint("Error playing alarm audio: $e");

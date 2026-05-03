@@ -28,22 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
     debugPrint("Checking login bypass for phone: $cleanPhone");
 
-    // --- DEVELOPMENT BYPASS ---
-    if (cleanPhone.endsWith("9644771118") || cleanPhone.endsWith("9004437501")) {
-      debugPrint("Login Bypass TRIGGERED for $cleanPhone");
-      setState(() => _isLoading = false);
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => OtpScreen(
-            verificationId: "bypass_id",
-            phoneNumber: cleanPhone,
-          ),
-        ),
-      );
-      return;
-    }
-    // --- END BYPASS ---
+    // PRODUCTION: OTP verified by Firebase only
 
     // Auto-formatting for standard Indian numbers; adjust if needed
     final formattedPhone = phone.startsWith('+') ? phone : '+91$phone';

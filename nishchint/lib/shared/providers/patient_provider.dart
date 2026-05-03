@@ -62,6 +62,12 @@ class PatientProvider with ChangeNotifier {
         // ----- BLAZING FAST BACKGROUND ALARM SYNC -----
         for (var med in _todayMedicines) {
            if (med.timeSlot != null && med.scheduleId != null) {
+              // Only schedule if the medicine is active today
+              final today = DateTime.now().weekday.toString();
+              if (med.daysOfWeek != null && med.daysOfWeek != 'Everyday' && !med.daysOfWeek!.split(',').contains(today)) {
+                continue;
+              }
+
               // 1. Aggressively cache voice note invisibly
               String? localVoicePath;
               if (med.voiceNoteUrl != null && med.voiceNoteUrl!.isNotEmpty) {

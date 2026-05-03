@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'notification_service.dart';
 import '../data/api_service.dart';
 import '../core/constants/api_constants.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class AlarmService {
   static Future<void> initialize() async {
@@ -10,14 +12,23 @@ class AlarmService {
   }
 
   static Future<void> cancelAllAlarms() async {
-    for (int i = 0; i <= 999999; i++) {
-      AndroidAlarmManager.cancel(i);
+    final prefs = await SharedPreferences.getInstance();
+    final String? idsJson = prefs.getString('scheduled_alarm_ids');
+    if (idsJson != null) {
+      final List<dynamic> ids = json.decode(idsJson);
+      for (var id in ids) {
+        if (id is int) {
+          await AndroidAlarmManager.cancel(id);
+        }
+      }
     }
+    await prefs.remove('scheduled_alarm_ids');
   }
 
   static Future<void> scheduleAllAlarms(List<dynamic> medicines) async {
     await cancelAllAlarms();
     final now = DateTime.now();
+    final List<int> newAlarmIds = [];
 
     for (var med in medicines) {
       final patientId = med['patient_id'];
@@ -45,7 +56,8 @@ class AlarmService {
             final alarmTime = DateTime(targetDate.year, targetDate.month, targetDate.day, hour, minute);
             
             if (alarmTime.isAfter(now)) {
-              final alarmId = (scheduleId * 10000) + i;
+              final alarmId = (scheduleId * 10 + i).hashCode.abs() % 2147483647;
+              newAlarmIds.add(alarmId);
               await AndroidAlarmManager.oneShotAt(
                 alarmTime,
                 alarmId,
@@ -72,6 +84,10 @@ class AlarmService {
         }
       }
     }
+    
+    // Save new IDs
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('scheduled_alarm_ids', json.encode(newAlarmIds));
   }
 
   @pragma('vm:entry-point')

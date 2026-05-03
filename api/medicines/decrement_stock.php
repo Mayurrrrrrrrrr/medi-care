@@ -26,17 +26,24 @@ if ($checkStmt->rowCount() == 0) {
     sendResponse(403, 'error', 'Unauthorized');
 }
 
-$medicine = $checkStmt->fetch(PDO::FETCH_ASSOC);
-$currentStock = (int)$medicine['stock_count'];
+// Atomic update: only decrement if stock > 0 and record not deleted
+$updateQuery = "UPDATE medicines 
+                SET stock_count = stock_count - 1 
+                WHERE id = :id AND stock_count > 0 AND deleted_at IS NULL";
+$updateStmt = $conn->prepare($updateQuery);
+$updateStmt->execute([':id' => $medicine_id]);
 
-if ($currentStock <= 0) {
-    sendResponse(200, 'success', 'Stock already at zero', ['stock_count' => 0]);
+if ($updateStmt->rowCount() == 0) {
+    sendResponse(400, 'error', 'Stock already at zero or medicine not found');
 }
 
-$newStock = $currentStock - 1;
-$query = "UPDATE medicines SET stock_count = :stock WHERE id = :id";
-$stmt = $conn->prepare($query);
-$stmt->execute([':stock' => $newStock, ':id' => $medicine_id]);
+// Fetch updated stock for low stock alert logic
+$alertQuery = "SELECT stock_count, stock_alert_at, name, patient_id FROM medicines WHERE id = :id";
+$alertStmt = $conn->prepare($alertQuery);
+$alertStmt->execute([':id' => $medicine_id]);
+$alertData = $alertStmt->fetch(PDO::FETCH_ASSOC);
+
+$newStock = (int)$alertData['stock_count'];
 
 // Check if low stock alert needed
 $alertQuery = "SELECT stock_alert_at, name, patient_id FROM medicines WHERE id = :id";

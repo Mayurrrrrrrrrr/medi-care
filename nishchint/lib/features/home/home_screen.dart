@@ -26,6 +26,17 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  final Set<int> _processingIds = {};
+
+  String getGreeting() {
+    final hour = DateTime.now().hour;
+    // Check if current locale is Hindi (using our helper)
+    final bool isHi = LanguageProvider.isHindi(context);
+    
+    if (hour < 12) return isHi ? 'सुप्रभात' : 'Good Morning';
+    if (hour < 17) return isHi ? 'नमस्ते' : 'Good Afternoon';
+    return isHi ? 'शुभ संध्या' : 'Good Evening';
+  }
 
   @override
   void initState() {
@@ -174,7 +185,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${t(AppStrings.goodMorningEn, AppStrings.goodMorningHi)}, ${selectedPatient?.name ?? 'User'}!',
+                          '${getGreeting()}, ${selectedPatient?.name ?? 'User'}!',
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         Text('${logs.length} doses scheduled for today'),
@@ -300,14 +311,23 @@ class _HomeScreenState extends State<HomeScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  TextButton.icon(
-                    onPressed: () {
-                      _markAsTakenAsync(context, log, provider);
-                    },
-                    icon: const Icon(Icons.done, size: 18),
-                    label: Text(t(AppStrings.markTakenEn, AppStrings.markTakenHi).toUpperCase()),
-                    style: TextButton.styleFrom(foregroundColor: Colors.green),
-                  ),
+                  _processingIds.contains(log.scheduleId)
+                    ? const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16.0),
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    : TextButton.icon(
+                        onPressed: () {
+                          _markAsTakenAsync(context, log, provider);
+                        },
+                        icon: const Icon(Icons.done, size: 18),
+                        label: Text(t(AppStrings.markTakenEn, AppStrings.markTakenHi).toUpperCase()),
+                        style: TextButton.styleFrom(foregroundColor: Colors.green),
+                      ),
                 ],
               )
             ]
@@ -318,6 +338,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _markAsTakenAsync(BuildContext context, AdherenceLogModel log, PatientProvider provider) async {
+     if (_processingIds.contains(log.scheduleId)) return;
+     
+     setState(() => _processingIds.add(log.scheduleId));
+     
      try {
         final ApiService api = ApiService();
         await api.post(ApiConstants.logUpdate, {
@@ -334,14 +358,7 @@ class _HomeScreenState extends State<HomeScreen> {
           });
         } catch (e) {
           debugPrint("Error decrementing stock: $e");
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(t(AppStrings.couldNotUpdateEn, AppStrings.couldNotUpdateHi)),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
+          // Non-blocking error for user
         }
 
         // Notify family
@@ -349,22 +366,15 @@ class _HomeScreenState extends State<HomeScreen> {
           await api.post(ApiConstants.familyNotifyTaken, {
             'patient_id': provider.selectedPatient!.id,
             'medicine_name': log.medicineName,
+            'schedule_id': log.scheduleId, // Fixed as per BUG-19
             'message': '✅ ${log.medicineName} has been taken!',
           });
         } catch (e) {
           debugPrint("Error notifying family: $e");
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(t(AppStrings.couldNotUpdateEn, AppStrings.couldNotUpdateHi)),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
         }
         
         // Refresh local state
-        provider.fetchTodayAdherence(provider.selectedPatient!.id);
+        await provider.fetchTodayAdherence(provider.selectedPatient!.id);
         
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -376,6 +386,10 @@ class _HomeScreenState extends State<HomeScreen> {
            ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text("Error: $e")),
           );
+        }
+     } finally {
+        if (mounted) {
+          setState(() => _processingIds.remove(log.scheduleId));
         }
      }
   }

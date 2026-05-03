@@ -16,7 +16,7 @@ if (!$patient_id) {
 }
 
 // Check if user has access to this patient
-$stmt = $pdo->prepare("SELECT id FROM family_members WHERE patient_id = ? AND user_id = ?");
+$stmt = $conn->prepare("SELECT id FROM family_members WHERE patient_id = ? AND user_id = ?");
 $stmt->execute([$patient_id, $user_id]);
 if (!$stmt->fetch()) {
     http_response_code(403);
@@ -25,12 +25,12 @@ if (!$stmt->fetch()) {
 }
 
 // Fetch Patient Info
-$stmt = $pdo->prepare("SELECT name, conditions, doctor_name, emergency_contact FROM patient_profiles WHERE id = ?");
+$stmt = $conn->prepare("SELECT name, conditions, doctor_name, emergency_contact FROM patient_profiles WHERE id = ?");
 $stmt->execute([$patient_id]);
 $patient = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // Fetch Medicines and their stats
-$stmt = $pdo->prepare("
+$stmt = $conn->prepare("
     SELECT id, name, dose, form, food_timing, is_critical, start_date, end_date, stock_count 
     FROM medicines 
     WHERE patient_id = ? AND deleted_at IS NULL
@@ -46,12 +46,12 @@ foreach ($medicines_list as $med) {
     $med_id = $med['id'];
     
     // Fetch Schedules
-    $stmt_sched = $pdo->prepare("SELECT label, time_slot, days_of_week FROM medicine_schedules WHERE medicine_id = ? AND is_active = 1");
+    $stmt_sched = $conn->prepare("SELECT label, time_slot, days_of_week FROM medicine_schedules WHERE medicine_id = ? AND is_active = 1");
     $stmt_sched->execute([$med_id]);
     $schedules = $stmt_sched->fetchAll(PDO::FETCH_ASSOC);
     
     // Fetch Adherence Stats for this medicine
-    $stmt_stats = $pdo->prepare("
+    $stmt_stats = $conn->prepare("
         SELECT 
             COUNT(*) as total,
             SUM(CASE WHEN status = 'taken' THEN 1 ELSE 0 END) as taken,

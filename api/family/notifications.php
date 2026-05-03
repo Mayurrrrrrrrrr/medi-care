@@ -11,6 +11,15 @@ if (!isset($_GET['patient_id'])) {
 }
 $patient_id = (int)$_GET['patient_id'];
 
+// Check if user has access to this patient
+$checkQuery = "SELECT id FROM family_members WHERE patient_id = :pid AND user_id = :uid";
+$checkStmt = $conn->prepare($checkQuery);
+$checkStmt->execute([':pid' => $patient_id, ':uid' => $user_id]);
+
+if ($checkStmt->rowCount() == 0) {
+    sendResponse(403, 'error', 'Access denied to this patient profile');
+}
+
 // Fetch family notifications for this patient
 $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 20;
 

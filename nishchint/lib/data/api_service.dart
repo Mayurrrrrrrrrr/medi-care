@@ -72,13 +72,22 @@ class ApiService {
 
   dynamic _processResponse(http.Response response) {
     if (response.statusCode == 200 || response.statusCode == 201) {
-      return json.decode(response.body);
+      try {
+        return json.decode(response.body);
+      } catch (e) {
+        debugPrint('API parse error: $e — body: ${response.body}');
+        throw Exception('Server returned unexpected response. Please try again.');
+      }
     } else if (response.statusCode == 401) {
       // Need to handle token expiry globally
       throw Exception('Unauthorized');
     } else {
-      final error = json.decode(response.body);
-      throw Exception(error['message'] ?? 'An error occurred');
+      try {
+        final error = json.decode(response.body);
+        throw Exception(error['message'] ?? 'An error occurred');
+      } catch (e) {
+        throw Exception('Server error (${response.statusCode}). Please try again.');
+      }
     }
   }
 

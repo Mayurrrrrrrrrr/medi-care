@@ -34,47 +34,21 @@ class _OtpScreenState extends State<OtpScreen> {
 
     setState(() => _isLoading = true);
     
-    debugPrint("Checking OTP bypass for phone: ${widget.phoneNumber} with code: $code");
-
-    // --- DEVELOPMENT BYPASS ---
-    if (widget.phoneNumber.endsWith("9644771118") || widget.phoneNumber.endsWith("9004437501")) {
-      if (code == "123456") {
-        debugPrint("OTP Bypass TRIGGERED!");
-        try {
-          final authProvider = context.read<AuthProvider>();
-          await authProvider.verifyOtp(widget.phoneNumber);
-          if (!mounted) return;
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => const HomeScreen()),
-            (Route<dynamic> route) => false,
-          );
-          return;
-        } catch (e) {
-          debugPrint("Backend check during bypass: $e");
-          // If the backend returns 404, it means the phone is "verified" by our bypass
-          // but the user needs to register.
-          if (mounted) {
-            setState(() => _isLoading = false);
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => RegisterScreen(phoneNumber: widget.phoneNumber),
-              ),
-            );
-          }
-          return; // Stop here, don't fall through to Firebase
-        }
-      }
-    }
-
     try {
       // 1. Verify SMS Code with Firebase natively
       final credential = PhoneAuthProvider.credential(
         verificationId: widget.verificationId,
         smsCode: code,
       );
-      await FirebaseAuth.instance.signInWithCredential(credential);
+      final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      final user = userCredential.user;
+
+      if (user == null) {
+        throw Exception("Firebase authentication failed");
+      }
+
+      // PRODUCTION: OTP verified by Firebase only
+      final idToken = await user.getIdToken();
 
       // 2. Verified via Firebase! Now exchange phone for PHP Backend JWT
       if (!mounted) return;
@@ -82,7 +56,7 @@ class _OtpScreenState extends State<OtpScreen> {
       final authProvider = context.read<AuthProvider>();
       
       try {
-        await authProvider.verifyOtp(widget.phoneNumber);
+        await authProvider.verifyOtp(widget.phoneNumber, idToken);
         // Success! User exists in MySQL. Reroute to Dashboard.
         if (!mounted) return;
         Navigator.pushAndRemoveUntil(
@@ -97,7 +71,7 @@ class _OtpScreenState extends State<OtpScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => RegisterScreen(phoneNumber: widget.phoneNumber),
+            builder: (context) => RegisterScreen(phoneNumber: widget.phoneNumber, firebaseToken: idToken),
           ),
         );
       }

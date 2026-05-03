@@ -33,7 +33,7 @@ $query = "
         AND l.status IN ('taken', 'skipped')
     WHERE m.patient_id = :pid
     AND s.is_active = 1
-    AND FIND_IN_SET(DAYOFWEEK(CURDATE()) - 1, REPLACE(s.days_of_week, 'Everyday', '1,2,3,4,5,6,7'))
+    AND FIND_IN_SET(WEEKDAY(CURDATE()) + 1, REPLACE(s.days_of_week, 'Everyday', '1,2,3,4,5,6,7'))
     AND CONCAT(CURDATE(), ' ', s.time_slot) <= NOW()
     AND TIMESTAMPDIFF(MINUTE, CONCAT(CURDATE(), ' ', s.time_slot), NOW()) >= 10
     AND l.id IS NULL

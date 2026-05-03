@@ -1,6 +1,7 @@
 <?php
 // Nishchint - Simple stateless JWT authentication configuration
 define('JWT_SECRET', 'Nishchint_Super_Secret_Key_2026!');
+define('FIREBASE_WEB_API_KEY', 'AIzaSyBUApA-Uty8cJW6Sh1xGPpPJrsIPNn1-AA');
 
 // Generate a token valid for 30 days
 function generateJWT($user_id) {

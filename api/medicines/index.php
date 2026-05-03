@@ -23,7 +23,7 @@ if ($checkStmt->rowCount() == 0) {
     sendResponse(403, 'error', 'Unauthorized to view medicines for this patient');
 }
 
-$query = "SELECT * FROM medicines WHERE patient_id = :pid ORDER BY created_at DESC";
+$query = "SELECT * FROM medicines WHERE patient_id = :pid AND deleted_at IS NULL ORDER BY created_at DESC";
 $stmt = $conn->prepare($query);
 $stmt->execute([':pid' => $patient_id]);
 $medicines = $stmt->fetchAll(PDO::FETCH_ASSOC);
